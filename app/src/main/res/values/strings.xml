@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nhật Ký Selfie</string>
+
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="cancel">Hủy</string>
+    <string name="delete">Xóa</string>
+    <string name="save">Lưu</string>
+    <string name="back">Quay lại</string>
+
+    <!-- Home Screen -->
+    <string name="capture_selfie">Chụp Selfie</string>
+    <string name="view_gallery">Xem Thư viện</string>
+    <string name="settings">Cài đặt</string>
+    <string name="on_this_day">Ngày này năm xưa</string>
+    <string name="today">Hôm nay</string>
+    <string name="yesterday">Hôm qua</string>
+    <string name="no_photos">Chưa có ảnh nào</string>
+    <string name="start_capturing">Bắt đầu ghi lại khoảnh khắc của bạn</string>
+    <string name="capture_first_photo">Chụp ảnh đầu tiên</string>
+
+    <!-- Gallery -->
+    <string name="gallery_title">Thư viện Selfie</string>
+    <string name="selected_count">Đã chọn: %d</string>
+    <string name="delete_confirmation_title">Xác nhận xóa</string>
+    <string name="delete_confirmation_message">Bạn có chắc muốn xóa %d ảnh đã chọn?</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="reminder_settings">Cài đặt nhắc nhở</string>
+    <string name="reminder_settings_subtitle">Thiết lập thời gian nhắc nhở hàng ngày</string>
+    <string name="timelapse_video">Tạo video Time-lapse</string>
+    <string name="timelapse_video_subtitle">Ghép các ảnh thành video</string>
+    <string name="backup_sync">Sao lưu &amp; Đồng bộ</string>
+    <string name="backup_sync_subtitle">Google Drive, Dropbox</string>
+    <string name="security_settings">Cài đặt bảo mật</string>
+    <string name="security_settings_subtitle">Khóa ứng dụng bằng PIN hoặc vân tay</string>
+    <string name="app_version">Phiên bản %s</string>
+
+    <!-- Reminder Settings -->
+    <string name="reminder_settings_title">Cài đặt nhắc nhở</string>
+    <string name="enable_daily_reminder">Bật nhắc nhở hàng ngày</string>
+    <string name="enable_reminder_subtitle">Nhắc bạn chụp selfie mỗi ngày</string>
+    <string name="reminder_time">Thời gian nhắc nhở</string>
+    <string name="hour">Giờ</string>
+    <string name="minute">Phút</string>
+    <string name="save_settings">Lưu cài đặt</string>
+    <string name="reminder_note">💡 Lưu ý: Đảm bảo ứng dụng có quyền gửi thông báo để nhận nhắc nhở.</string>
+
+    <!-- Notifications -->
+    <string name="reminder_notification_title">Đã đến giờ chụp selfie!</string>
+    <string name="reminder_notification_message">Hãy ghi lại khoảnh khắc của bạn hôm nay</string>
+    <string name="notification_channel_name">Nhắc nhở Selfie</string>
+    <string name="notification_channel_description">Nhắc nhở chụp selfie hàng ngày</string>
+
+    <!-- Camera -->
+    <string name="camera_permission_required">Cần quyền truy cập Camera</string>
+    <string name="camera_permission_denied">Không thể chụp ảnh khi không có quyền Camera</string>
+    <string name="capture">Chụp</string>
+
+    <!-- Errors -->
+    <string name="error_generic">Đã xảy ra lỗi</string>
+    <string name="error_save_failed">Không thể lưu ảnh</string>
+    <string name="error_delete_failed">Không thể xóa ảnh</string>
+    <string name="error_load_failed">Không thể tải ảnh</string>
+</resources>
+
