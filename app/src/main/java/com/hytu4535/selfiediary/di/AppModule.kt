@@ -22,7 +22,9 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "selfie_diary_db"
-        ).build()
+        )
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
     }
 
     @Provides

@@ -40,7 +40,9 @@ class HomeViewModel @Inject constructor(
 
     private fun loadOnThisDay() {
         viewModelScope.launch {
-            _onThisDay.value = getOnThisDayUseCase()
+            getOnThisDayUseCase.getMostRecent().collect { entry ->
+                _onThisDay.value = entry
+            }
         }
     }
 }
