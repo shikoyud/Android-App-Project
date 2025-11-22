@@ -77,17 +77,17 @@ app/src/main/java/com/hytu4535/selfiediary/
    - ✅ AppDatabase.kt - Room Database setup
    - ✅ SelfieEntity.kt - Entity model
    - ✅ SelfieDao.kt - Data Access Object
-   - 🔲 **Cải thiện Database:**
-     - Thêm field: note (ghi chú), emoji (cảm xúc), tags
-     - Thêm field: isEdited, editedFilePath
-     - Thêm field: isSynced (cho cloud backup)
-     - Migration strategy khi update schema
-     - Database backup & restore
-   - 🔲 **Query nâng cao:**
-     - Tìm ảnh theo ngày/tháng/năm
-     - Tìm ảnh "On This Day" (cùng ngày năm trước)
-     - Search theo note, emoji, tags
-     - Statistics (số ảnh theo tháng, emoji phổ biến)
+   - ✅ **Cải thiện Database:**
+     - ✅ Thêm field: note (ghi chú), emoji (cảm xúc), tags
+     - ✅ Thêm field: isEdited, editedFilePath
+     - ✅ Thêm field: isSynced (cho cloud backup)
+     - ✅ Migration strategy khi update schema
+     - 🔲 Database backup & restore
+   - ✅ **Query nâng cao:**
+     - ✅ Tìm ảnh theo ngày/tháng/năm
+     - ✅ Tìm ảnh "On This Day" (cùng ngày năm trước)
+     - ✅ Search theo note, emoji, tags
+     - ✅ Statistics (số ảnh theo tháng, emoji phổ biến)
 
 2. **Repository Pattern** (35%)
    - ✅ SelfieRepository interface

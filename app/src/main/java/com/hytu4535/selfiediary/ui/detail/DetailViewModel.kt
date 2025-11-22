@@ -97,7 +97,7 @@ class DetailViewModel @Inject constructor(
     fun updateNote(note: String) {
         viewModelScope.launch {
             _currentSelfie.value?.let { selfie ->
-                updateNoteAndEmojiUseCase(selfie.id, note, selfie.emoji)
+                updateNoteAndEmojiUseCase.execute(selfie.id, note, selfie.emoji)
                 _currentSelfie.value = selfie.copy(note = note)
             }
         }
@@ -106,7 +106,7 @@ class DetailViewModel @Inject constructor(
     fun updateEmoji(emoji: String?) {
         viewModelScope.launch {
             _currentSelfie.value?.let { selfie ->
-                updateNoteAndEmojiUseCase(selfie.id, selfie.note, emoji)
+                updateNoteAndEmojiUseCase.execute(selfie.id, selfie.note, emoji)
                 _currentSelfie.value = selfie.copy(emoji = emoji)
             }
         }

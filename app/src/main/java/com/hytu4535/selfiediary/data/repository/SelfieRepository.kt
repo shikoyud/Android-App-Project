@@ -37,18 +37,32 @@ interface SelfieRepository {
 
     // ==================== SEARCH ====================
 
-    fun searchSelfies(query: String): Flow<List<SelfieEntry>>
+    fun searchByNote(query: String): Flow<List<SelfieEntry>>
 
     fun searchByEmoji(emoji: String): Flow<List<SelfieEntry>>
 
     fun searchByTag(tag: String): Flow<List<SelfieEntry>>
 
+    fun searchAll(query: String): Flow<List<SelfieEntry>>
+
     // ==================== STATISTICS ====================
 
-    suspend fun getStatistics(): SelfieStatistics
+    suspend fun getTotalCount(): Int
+
+    suspend fun getEditedCount(): Int
+
+    suspend fun getSyncedCount(): Int
+
+    suspend fun getCountByMonth(month: Int, year: Int): Int
+
+    suspend fun getCountByDateRange(startTimestamp: Long, endTimestamp: Long): Int
+
+    suspend fun getMostUsedEmojis(limit: Int): List<com.hytu4535.selfiediary.data.local.dao.EmojiCount>
+
+    suspend fun getCountByAllMonths(): List<com.hytu4535.selfiediary.data.local.dao.MonthCount>
 
     // ==================== NOTE & EMOJI ====================
 
-    suspend fun updateNoteAndEmoji(id: Long, note: String, emoji: String?)
+    suspend fun updateNoteAndEmoji(id: Long, note: String, emoji: String?, tags: List<String> = emptyList())
 }
 

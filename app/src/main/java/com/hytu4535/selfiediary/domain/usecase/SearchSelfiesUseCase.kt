@@ -6,35 +6,51 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
- * Use case to search selfies by query
- * Searches in note, emoji, and tags
+ * Use case for searching selfies by various criteria
  */
 class SearchSelfiesUseCase @Inject constructor(
     private val repository: SelfieRepository
 ) {
     /**
-     * Search all fields (note, emoji, tags)
+     * Search selfies by note content
      */
-    operator fun invoke(query: String): Flow<List<SelfieEntry>> {
-        return if (query.isBlank()) {
-            repository.getAllSelfies()
-        } else {
-            repository.searchSelfies(query.trim())
-        }
+    fun searchByNote(query: String): Flow<List<SelfieEntry>> {
+        return repository.searchByNote(query)
     }
 
     /**
-     * Search by specific emoji
+     * Search selfies by emoji
      */
     fun searchByEmoji(emoji: String): Flow<List<SelfieEntry>> {
         return repository.searchByEmoji(emoji)
     }
 
     /**
-     * Search by specific tag
+     * Search selfies by tag
      */
     fun searchByTag(tag: String): Flow<List<SelfieEntry>> {
         return repository.searchByTag(tag)
+    }
+
+    /**
+     * Combined search across all fields
+     */
+    fun searchAll(query: String): Flow<List<SelfieEntry>> {
+        return repository.searchAll(query)
+    }
+
+    /**
+     * Search selfies by date range
+     */
+    fun searchByDateRange(startTimestamp: Long, endTimestamp: Long): Flow<List<SelfieEntry>> {
+        return repository.getSelfiesByDateRange(startTimestamp, endTimestamp)
+    }
+
+    /**
+     * Search selfies by specific month and year
+     */
+    fun searchByMonth(month: Int, year: Int): Flow<List<SelfieEntry>> {
+        return repository.getSelfiesByMonth(month, year)
     }
 }
 

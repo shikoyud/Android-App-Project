@@ -3,7 +3,6 @@ package com.hytu4535.selfiediary.ui.home
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -12,10 +11,13 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -28,8 +30,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.hytu4535.selfiediary.domain.model.SelfieEntry
+import com.hytu4535.selfiediary.ui.home.components.FilterIndicator
+import com.hytu4535.selfiediary.ui.home.components.OnThisDayCard as OnThisDayCardComponent
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -38,7 +43,11 @@ import java.util.*
 fun HomeScreen(
     onNavigateToCapture: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToSearch: () -> Unit = {},
+    onNavigateToStatistics: () -> Unit = {},
+    onNavigateToDateFilter: () -> Unit = {},
     onNavigateToDetail: (Long) -> Unit,
+    navController: NavController? = null,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val selfies by viewModel.selfies.collectAsState()
@@ -46,9 +55,22 @@ fun HomeScreen(
     val selectedItems by viewModel.selectedItems.collectAsState()
     val isSelectionMode by viewModel.isSelectionMode.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val isFiltered by viewModel.isFiltered.collectAsState()
     val groupedSelfies = groupSelfiesByDate(selfies)
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    // Observe date range result from DateFilterScreen
+    LaunchedEffect(navController?.currentBackStackEntry) {
+        navController?.currentBackStackEntry
+            ?.savedStateHandle
+            ?.get<Pair<Long, Long>>("date_range")
+            ?.let { (start, end) ->
+                viewModel.filterByDateRange(start, end)
+                // Clear the saved state after consuming
+                navController.currentBackStackEntry?.savedStateHandle?.remove<Pair<Long, Long>>("date_range")
+            }
+    }
 
 
     Scaffold(
@@ -80,6 +102,22 @@ fun HomeScreen(
                 TopAppBar(
                     title = { Text("Nhật ký Selfie", fontWeight = FontWeight.Bold) },
                     actions = {
+                        // DEBUG: Test On This Day button
+                        IconButton(
+                            onClick = { viewModel.createTestPhotoForOnThisDay() }
+                        ) {
+                            Text("🎂", style = MaterialTheme.typography.titleLarge)
+                        }
+
+                        IconButton(onClick = onNavigateToSearch) {
+                            Icon(Icons.Default.Search, contentDescription = "Tìm kiếm")
+                        }
+                        IconButton(onClick = onNavigateToDateFilter) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Lọc theo ngày")
+                        }
+                        IconButton(onClick = onNavigateToStatistics) {
+                            Icon(Icons.Default.Analytics, contentDescription = "Thống kê")
+                        }
                         IconButton(
                             onClick = { viewModel.refresh() },
                             enabled = !isRefreshing
@@ -105,7 +143,8 @@ fun HomeScreen(
         }
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize()) {
-            if (selfies.isEmpty() && !isRefreshing) {
+            // Show empty state only when no filter is active and truly no photos
+            if (selfies.isEmpty() && !isRefreshing && !isFiltered) {
                 EmptyState(onCaptureClick = onNavigateToCapture)
             } else {
                 LazyVerticalGrid(
@@ -117,14 +156,25 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // On This Day Section
-                    if (onThisDay != null && !isSelectionMode) {
+                    // Filter Indicator
+                    if (isFiltered && !isSelectionMode) {
                         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                            OnThisDayCard(
-                                entry = onThisDay,
-                                onClick = { onThisDay?.let { onNavigateToDetail(it.selfieEntry.id) } },
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+                            FilterIndicator(
+                                onClearFilter = { viewModel.clearFilter() }
                             )
+                        }
+                    }
+
+                    // On This Day Section
+                    if (onThisDay != null && !isSelectionMode && !isFiltered) {
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                            val thisDayEntry = onThisDay // Local variable to avoid smart cast issue
+                            if (thisDayEntry != null) {
+                                OnThisDayCardComponent(
+                                    entry = thisDayEntry,
+                                    onImageClick = { onNavigateToDetail(it) }
+                                )
+                            }
                         }
                     }
 
@@ -150,6 +200,35 @@ fun HomeScreen(
                                     viewModel.toggleSelection(selfie.id)
                                 }
                             )
+                        }
+                    }
+
+                    // Empty filter result message
+                    if (isFiltered && selfies.isEmpty()) {
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "😔",
+                                    style = MaterialTheme.typography.displayMedium
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Không tìm thấy ảnh",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Không có ảnh nào trong khoảng thời gian này",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
                         }
                     }
                 }
@@ -182,63 +261,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-private fun OnThisDayCard(
-    entry: com.hytu4535.selfiediary.domain.model.OnThisDayEntry?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (entry == null) return
-
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "🎉 Ngày này năm xưa",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${entry.yearsAgo} năm trước",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            AsyncImage(
-                model = entry.selfieEntry.filePath,
-                contentDescription = "Ảnh năm xưa",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop
-            )
-            if (entry.selfieEntry.note.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = entry.selfieEntry.note,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun DateHeader(date: String) {

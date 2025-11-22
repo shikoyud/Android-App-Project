@@ -7,6 +7,7 @@ import com.hytu4535.selfiediary.domain.model.SelfieEntry
 import com.hytu4535.selfiediary.domain.usecase.DeleteSelfiesUseCase
 import com.hytu4535.selfiediary.domain.usecase.GetAllSelfiesUseCase
 import com.hytu4535.selfiediary.domain.usecase.GetOnThisDayUseCase
+import com.hytu4535.selfiediary.domain.usecase.SearchSelfiesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getAllSelfiesUseCase: GetAllSelfiesUseCase,
     private val getOnThisDayUseCase: GetOnThisDayUseCase,
-    private val deleteSelfiesUseCase: DeleteSelfiesUseCase
+    private val deleteSelfiesUseCase: DeleteSelfiesUseCase,
+    private val searchSelfiesUseCase: SearchSelfiesUseCase
 ) : ViewModel() {
 
     private val _selfies = MutableStateFlow<List<SelfieEntry>>(emptyList())
@@ -35,6 +37,9 @@ class HomeViewModel @Inject constructor(
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    private val _isFiltered = MutableStateFlow(false)
+    val isFiltered: StateFlow<Boolean> = _isFiltered.asStateFlow()
 
     init {
         loadSelfies()
@@ -62,6 +67,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             getOnThisDayUseCase.getMostRecent().collect { entry ->
                 _onThisDay.value = entry
+                println("HomeViewModel - On This Day: ${if (entry != null) "Found photo from ${entry.yearsAgo} years ago" else "No photo found"}")
             }
         }
     }
@@ -92,6 +98,42 @@ class HomeViewModel @Inject constructor(
             val idsToDelete = _selectedItems.value.toList()
             deleteSelfiesUseCase(idsToDelete)
             clearSelection()
+        }
+    }
+
+    fun filterByDateRange(startTimestamp: Long, endTimestamp: Long) {
+        viewModelScope.launch {
+            searchSelfiesUseCase.searchByDateRange(startTimestamp, endTimestamp).collect { filtered ->
+                _selfies.value = filtered
+                _isFiltered.value = true
+            }
+        }
+    }
+
+    fun clearFilter() {
+        _isFiltered.value = false
+        loadSelfies()
+    }
+
+    // DEBUG: Show info about On This Day feature
+    fun createTestPhotoForOnThisDay() {
+        viewModelScope.launch {
+            println("========================================")
+            println("ON THIS DAY - DEBUG INFO")
+            println("========================================")
+            println("Current date: ${java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())}")
+            println("Total photos: ${_selfies.value.size}")
+            println("On This Day status: ${if (_onThisDay.value != null) "FOUND" else "NOT FOUND"}")
+            if (_onThisDay.value != null) {
+                println("Years ago: ${_onThisDay.value?.yearsAgo}")
+            }
+            println("")
+            println("TO TEST ON THIS DAY:")
+            println("1. Take a photo today")
+            println("2. Change device date to next year, same day")
+            println("3. Open app again")
+            println("4. On This Day card will appear!")
+            println("========================================")
         }
     }
 }
