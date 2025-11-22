@@ -1,10 +1,14 @@
 package com.hytu4535.selfiediary.ui.common.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.hytu4535.selfiediary.ui.capture.CaptureScreen
+import com.hytu4535.selfiediary.ui.edit.EditScreen
 import com.hytu4535.selfiediary.ui.gallery.GalleryScreen
 import com.hytu4535.selfiediary.ui.home.HomeScreen
 import com.hytu4535.selfiediary.ui.settings.SettingsScreen
@@ -25,7 +29,36 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable(Screen.Capture.route) {
-            CaptureScreen(onBack = { navController.popBackStack() })
+            CaptureScreen(
+                onBack = { navController.popBackStack() },
+                onCaptureSuccess = { imagePath ->
+                    navController.navigate(Screen.Edit.createRoute(imagePath))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Edit.route,
+            arguments = listOf(
+                navArgument("imagePath") {
+                    type = NavType.StringType
+                    nullable = false
+                }
+            )
+        ) { backStackEntry ->
+            val encodedPath = backStackEntry.arguments?.getString("imagePath")
+            val imagePath = encodedPath?.let { Uri.decode(it) } ?: run {
+                return@composable
+            }
+            EditScreen(
+                imagePath = imagePath,
+                onBack = { navController.popBackStack() },
+                onSaveSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Screen.Gallery.route) {
