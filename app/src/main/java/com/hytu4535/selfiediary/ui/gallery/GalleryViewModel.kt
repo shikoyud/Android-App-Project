@@ -3,6 +3,7 @@ package com.hytu4535.selfiediary.ui.gallery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hytu4535.selfiediary.domain.model.SelfieEntry
+import com.hytu4535.selfiediary.domain.usecase.DeleteSelfiesUseCase
 import com.hytu4535.selfiediary.domain.usecase.GetAllSelfiesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
-    private val getAllSelfiesUseCase: GetAllSelfiesUseCase
+    private val getAllSelfiesUseCase: GetAllSelfiesUseCase,
+    private val deleteSelfiesUseCase: DeleteSelfiesUseCase
 ) : ViewModel() {
 
     private val _selfies = MutableStateFlow<List<SelfieEntry>>(emptyList())
@@ -22,7 +24,8 @@ class GalleryViewModel @Inject constructor(
     private val _selectedItems = MutableStateFlow<Set<Long>>(emptySet())
     val selectedItems: StateFlow<Set<Long>> = _selectedItems.asStateFlow()
 
-    val isSelectionMode: StateFlow<Boolean> = MutableStateFlow(false)
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
 
     init {
         loadSelfies()
@@ -44,17 +47,25 @@ class GalleryViewModel @Inject constructor(
             current.add(id)
         }
         _selectedItems.value = current
-        (isSelectionMode as MutableStateFlow).value = current.isNotEmpty()
+        _isSelectionMode.value = current.isNotEmpty()
     }
 
     fun clearSelection() {
         _selectedItems.value = emptySet()
-        (isSelectionMode as MutableStateFlow).value = false
+        _isSelectionMode.value = false
+    }
+
+    fun selectAll() {
+        _selectedItems.value = _selfies.value.map { it.id }.toSet()
+        _isSelectionMode.value = true
     }
 
     fun deleteSelected() {
-        // TODO: Implement delete logic
-        clearSelection()
+        viewModelScope.launch {
+            val idsToDelete = _selectedItems.value.toList()
+            deleteSelfiesUseCase(idsToDelete)
+            clearSelection()
+        }
     }
 }
 

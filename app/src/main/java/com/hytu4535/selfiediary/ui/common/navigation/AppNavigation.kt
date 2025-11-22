@@ -2,9 +2,12 @@ package com.hytu4535.selfiediary.ui.common.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.hytu4535.selfiediary.ui.capture.CaptureScreen
+import com.hytu4535.selfiediary.ui.detail.DetailScreen
 import com.hytu4535.selfiediary.ui.gallery.GalleryScreen
 import com.hytu4535.selfiediary.ui.home.HomeScreen
 import com.hytu4535.selfiediary.ui.settings.SettingsScreen
@@ -19,8 +22,10 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToCapture = { navController.navigate(Screen.Capture.route) },
-                onNavigateToGallery = { navController.navigate(Screen.Gallery.route) },
-                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToDetail = { selfieId ->
+                    navController.navigate(Screen.Detail.createRoute(selfieId))
+                }
             )
         }
 
@@ -30,6 +35,15 @@ fun AppNavigation(navController: NavHostController) {
 
         composable(Screen.Gallery.route) {
             GalleryScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(
+                navArgument("selfieId") { type = NavType.LongType }
+            )
+        ) {
+            DetailScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Screen.Settings.route) {

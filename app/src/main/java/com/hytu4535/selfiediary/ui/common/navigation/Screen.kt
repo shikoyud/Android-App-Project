@@ -5,6 +5,9 @@ sealed class Screen(val route: String) {
     object Capture : Screen("capture")
     object Gallery : Screen("gallery")
     object Settings : Screen("settings")
+    object Detail : Screen("detail/{selfieId}") {
+        fun createRoute(selfieId: Long) = "detail/$selfieId"
+    }
     object ImageDetail : Screen("image_detail/{imageId}") {
         fun createRoute(imageId: Long) = "image_detail/$imageId"
     }

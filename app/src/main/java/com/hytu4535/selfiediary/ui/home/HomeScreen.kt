@@ -1,7 +1,10 @@
 package com.hytu4535.selfiediary.ui.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -9,6 +12,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,77 +33,151 @@ import com.hytu4535.selfiediary.domain.model.SelfieEntry
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onNavigateToCapture: () -> Unit,
-    onNavigateToGallery: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToDetail: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val selfies by viewModel.selfies.collectAsState()
     val onThisDay by viewModel.onThisDay.collectAsState()
+    val selectedItems by viewModel.selectedItems.collectAsState()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     val groupedSelfies = groupSelfiesByDate(selfies)
+
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Nhật ký Selfie", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Cài đặt")
+            if (isSelectionMode) {
+                // Contextual Action Bar
+                TopAppBar(
+                    title = { Text("Đã chọn: ${selectedItems.size}") },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.clearSelection() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Hủy")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.selectAll() }) {
+                            Icon(Icons.Default.SelectAll, contentDescription = "Chọn tất cả")
+                        }
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Xóa")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                )
+            } else {
+                TopAppBar(
+                    title = { Text("Nhật ký Selfie", fontWeight = FontWeight.Bold) },
+                    actions = {
+                        IconButton(
+                            onClick = { viewModel.refresh() },
+                            enabled = !isRefreshing
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Làm mới")
+                        }
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(Icons.Default.Settings, contentDescription = "Cài đặt")
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToCapture,
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Chụp Selfie")
+            if (!isSelectionMode) {
+                FloatingActionButton(
+                    onClick = onNavigateToCapture,
+                    containerColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Chụp Selfie")
+                }
             }
         }
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            // On This Day Section
-            if (onThisDay != null) {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                    OnThisDayCard(
-                        entry = onThisDay,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
-                    )
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (selfies.isEmpty() && !isRefreshing) {
+                EmptyState(onCaptureClick = onNavigateToCapture)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    // On This Day Section
+                    if (onThisDay != null && !isSelectionMode) {
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                            OnThisDayCard(
+                                entry = onThisDay,
+                                onClick = { onThisDay?.let { onNavigateToDetail(it.selfieEntry.id) } },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+                            )
+                        }
+                    }
+
+                    // Grouped Selfies by Date
+                    groupedSelfies.forEach { (date, entries) ->
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
+                            DateHeader(date = date)
+                        }
+
+                        items(entries) { selfie ->
+                            SelectableSelfieGridItem(
+                                selfie = selfie,
+                                isSelected = selectedItems.contains(selfie.id),
+                                isSelectionMode = isSelectionMode,
+                                onShortClick = {
+                                    if (isSelectionMode) {
+                                        viewModel.toggleSelection(selfie.id)
+                                    } else {
+                                        onNavigateToDetail(selfie.id)
+                                    }
+                                },
+                                onLongClick = {
+                                    viewModel.toggleSelection(selfie.id)
+                                }
+                            )
+                        }
+                    }
                 }
             }
+        }
 
-            // Grouped Selfies by Date
-            groupedSelfies.forEach { (date, entries) ->
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                    DateHeader(date = date)
+        // Delete Confirmation Dialog
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Xác nhận xóa") },
+                text = { Text("Bạn có chắc muốn xóa ${selectedItems.size} ảnh đã chọn? Hành động này không thể hoàn tác.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteSelected()
+                            showDeleteDialog = false
+                        }
+                    ) {
+                        Text("Xóa", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Hủy")
+                    }
                 }
-
-                items(entries) { selfie ->
-                    SelfieGridItem(
-                        selfie = selfie,
-                        onClick = { /* TODO: Navigate to detail */ }
-                    )
-                }
-            }
-
-            // Empty State
-            if (selfies.isEmpty()) {
-                item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(3) }) {
-                    EmptyState(onCaptureClick = onNavigateToCapture)
-                }
-            }
+            )
         }
     }
 }
@@ -103,30 +185,39 @@ fun HomeScreen(
 @Composable
 private fun OnThisDayCard(
     entry: com.hytu4535.selfiediary.domain.model.OnThisDayEntry?,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (entry == null) return
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = "🎉 Ngày này năm xưa",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "${entry.yearsAgo} năm trước",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🎉 Ngày này năm xưa",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "${entry.yearsAgo} năm trước",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             AsyncImage(
                 model = entry.selfieEntry.filePath,
@@ -137,6 +228,14 @@ private fun OnThisDayCard(
                     .clip(MaterialTheme.shapes.medium),
                 contentScale = ContentScale.Crop
             )
+            if (entry.selfieEntry.note.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = entry.selfieEntry.note,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }
@@ -153,17 +252,33 @@ private fun DateHeader(date: String) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SelfieGridItem(
+private fun SelectableSelfieGridItem(
     selfie: SelfieEntry,
-    onClick: () -> Unit,
+    isSelected: Boolean,
+    isSelectionMode: Boolean,
+    onShortClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(MaterialTheme.shapes.small)
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onShortClick,
+                onLongClick = onLongClick
+            )
+            .then(
+                if (isSelected) {
+                    Modifier.border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = MaterialTheme.shapes.small
+                    )
+                } else Modifier
+            )
     ) {
         AsyncImage(
             model = selfie.filePath,
@@ -172,16 +287,41 @@ private fun SelfieGridItem(
             contentScale = ContentScale.Crop
         )
 
+        // Selection overlay
+        if (isSelectionMode) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (isSelected) Color.Black.copy(alpha = 0.3f)
+                        else Color.Transparent
+                    )
+            )
+        }
+
         // Emoji overlay if exists
-        if (selfie.note.isNotEmpty()) {
+        if (selfie.emoji != null && !isSelectionMode) {
             Text(
-                text = selfie.note.take(2), // Take first 2 chars (emoji)
+                text = selfie.emoji,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(4.dp)
                     .background(Color.White.copy(alpha = 0.8f), CircleShape)
-                    .padding(4.dp),
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        // Check icon when selected
+        if (isSelected) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Đã chọn",
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(4.dp)
+                    .size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
             )
         }
     }

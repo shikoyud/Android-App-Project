@@ -23,6 +23,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Giảm kích thước APK cho debug
+            isMinifyEnabled = false
+            isShrinkResources = false
+            // Tắt tính năng yêu cầu internal storage only
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
