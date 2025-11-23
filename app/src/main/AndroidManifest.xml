@@ -16,7 +16,9 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         tools:targetApi="31">
-
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Theme.AppCompat.Light.DarkActionBar"/>
         <activity
             android:name="com.hytu4535.selfiediary.MainActivity"
             android:exported="true"

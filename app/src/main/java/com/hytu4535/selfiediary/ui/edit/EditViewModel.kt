@@ -1,5 +1,6 @@
 package com.hytu4535.selfiediary.ui.edit
 
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hytu4535.selfiediary.domain.model.SelfieEntry
@@ -17,20 +18,26 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EditViewModel @Inject constructor(
-    private val saveSelfieUseCase: SaveSelfieUseCase
+    private val saveSelfieUseCase: SaveSelfieUseCase,
+    val imageProcessor: ImageProcessor
 ) : ViewModel() {
 
-    private val _imagePath = MutableStateFlow<String?>(null)
-    val imagePath: StateFlow<String?> = _imagePath.asStateFlow()
-
+    private val _originalImagePath = MutableStateFlow<String?>(null)
+    private val _baseImagePath = MutableStateFlow<String?>(null)
+    val baseImagePath: StateFlow<String?> = _baseImagePath.asStateFlow()
+    private val _displayImagePath = MutableStateFlow<String?>(null)
+    val displayImagePath: StateFlow<String?> = _displayImagePath.asStateFlow()
     private val _editState = MutableStateFlow(EditState())
     val editState: StateFlow<EditState> = _editState.asStateFlow()
 
     fun initImagePath(path: String) {
-        if (_imagePath.value == null) {
-            _imagePath.value = path
+        if (_originalImagePath.value == null) {
+            _originalImagePath.value = path
+            _baseImagePath.value = path
+            _displayImagePath.value = path
         }
     }
+
     fun updateNote(note: String) {
         if (note.length <= 50) {
             _editState.update { it.copy(note = note) }
@@ -41,20 +48,32 @@ class EditViewModel @Inject constructor(
         _editState.update { it.copy(emoji = emoji) }
     }
 
-    fun applyFilter(filterName: String) {
-        // TODO: Image processing
-        _editState.update { it.copy(filter = filterName) }
+    fun applyRotation(newPath: String) {
+        val currentFilter = _editState.value.filter
+        _baseImagePath.value = newPath
+        if (currentFilter == "None") {
+            _displayImagePath.value = newPath
+        } else {
+            applyFilter(currentFilter, true)
+        }
     }
 
-    fun rotatePhoto() {
-        //TODO: Rotate photo
+    fun applyFilter(filterName: String, forceApply: Boolean = false) {
+        val currentBase = _baseImagePath.value
+        if (currentBase == null) return
+        if (filterName == _editState.value.filter && !forceApply) return
+
+        _editState.update { it.copy(filter = filterName) }
+
+        val newDisplayPath = imageProcessor.applyFilterAndSaveTemp(currentBase, filterName)
+        _displayImagePath.value = newDisplayPath
     }
 
     fun savePhoto(
         onSuccess: () -> Unit,
         onError: (message: String) -> Unit
     ) {
-        val originalPath = _imagePath.value ?: run {
+        val pathToBeSaved = _displayImagePath.value ?: run {
             onError("Không tìm thấy đường dẫn ảnh.")
             return
         }
@@ -64,14 +83,17 @@ class EditViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val state = _editState.value
-                val isEdited = state.filter != "None"
-                val finalImagePath = originalPath
+                val finalSavedPath = imageProcessor.processAndSave(imagePath = pathToBeSaved)
+                if (finalSavedPath == null) {
+                    throw Exception("Không thể lưu ảnh cuối cùng.")
+                }
+                val isEdited = (_displayImagePath.value != _originalImagePath.value) || (state.filter != "None")
 
                 val cal = Calendar.getInstance()
 
                 val entry = SelfieEntry(
-                    filePath = originalPath,
-                    editedFilePath = if (isEdited) finalImagePath else null,
+                    filePath = finalSavedPath,
+                    editedFilePath = if (isEdited) finalSavedPath else null,
                     timestamp = System.currentTimeMillis(),
                     note = state.note,
                     emoji = state.emoji,
@@ -83,7 +105,7 @@ class EditViewModel @Inject constructor(
                 saveSelfieUseCase.invoke(entry)
 
                 withContext(Dispatchers.Main) {
-                    _editState.update { it.copy(isSaving = true) }
+                    _editState.update { it.copy(isSaving = false) }
                     onSuccess()
                 }
             } catch (e: Exception) {
@@ -98,9 +120,7 @@ class EditViewModel @Inject constructor(
 
 data class EditState(
     val note: String = "",
-    val emoji: String = "😀",
+    val emoji: String = "😊",
     val filter: String = "None",
-    val rotationDegrees: Float = 0f,
-    val cropRect: android.graphics.RectF? = null,
     val isSaving: Boolean = false
 )

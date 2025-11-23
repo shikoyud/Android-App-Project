@@ -90,6 +90,10 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
+    // Image Cropper for image cropping
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+    implementation("androidx.appcompat:appcompat:1.x.x")
+
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
 

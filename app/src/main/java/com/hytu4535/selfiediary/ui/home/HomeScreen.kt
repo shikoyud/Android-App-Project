@@ -358,6 +358,7 @@ private fun EmptyState(onCaptureClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Spacer(modifier = Modifier.height(60.dp))
         Text(
             text = "📸",
             style = MaterialTheme.typography.displayLarge
