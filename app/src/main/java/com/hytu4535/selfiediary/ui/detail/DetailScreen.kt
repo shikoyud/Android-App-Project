@@ -2,6 +2,7 @@ package com.hytu4535.selfiediary.ui.detail
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -39,38 +40,41 @@ fun DetailScreen(
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
+    var showCard by remember { mutableStateOf(true) }
     // Swipe gesture detection
     var offsetX by remember { mutableStateOf(0f) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "${currentIndex + 1} / ${allSelfies.size}",
-                        style = MaterialTheme.typography.titleMedium
+            if (showCard) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "${currentIndex + 1} / ${allSelfies.size}",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Xóa")
+                        }
+                        IconButton(onClick = { /* TODO: Share */ }) {
+                            Icon(Icons.Default.Share, contentDescription = "Chia sẻ")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Black,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Xóa")
-                    }
-                    IconButton(onClick = { /* TODO: Share */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "Chia sẻ")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
                 )
-            )
+            }
         },
         containerColor = Color.Black
     ) { padding ->
@@ -84,6 +88,13 @@ fun DetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures (
+                                onTap = {
+                                    showCard = !showCard
+                                }
+                            )
+                        }
                         .pointerInput(Unit) {
                             detectHorizontalDragGestures(
                                 onDragEnd = {
@@ -107,94 +118,96 @@ fun DetailScreen(
                 }
 
                 // Bottom Info Card
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                    )
-                ) {
-                    Column(
+                if (showCard) {
+                    Card(
                         modifier = Modifier
+                            .align(Alignment.BottomCenter)
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                        )
                     ) {
-                        // Date and Time
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         ) {
-                            Column {
+                            // Date and Time
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = formatDate(selfie.timestamp),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = formatTime(selfie.timestamp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+
+                                // Emoji display
+                                if (selfie.emoji != null) {
+                                    Text(
+                                        text = selfie.emoji,
+                                        style = MaterialTheme.typography.displaySmall,
+                                        modifier = Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.primaryContainer,
+                                                CircleShape
+                                            )
+                                            .padding(8.dp)
+                                    )
+                                }
+                            }
+
+                            // Note
+                            if (selfie.note.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(12.dp))
                                 Text(
-                                    text = formatDate(selfie.timestamp),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = formatTime(selfie.timestamp),
+                                    text = selfie.note,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
-                            // Emoji display
-                            if (selfie.emoji != null) {
-                                Text(
-                                    text = selfie.emoji,
-                                    style = MaterialTheme.typography.displaySmall,
-                                    modifier = Modifier
-                                        .background(
-                                            MaterialTheme.colorScheme.primaryContainer,
-                                            CircleShape
-                                        )
-                                        .padding(8.dp)
-                                )
-                            }
-                        }
-
-                        // Note
-                        if (selfie.note.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = selfie.note,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        // Action Buttons
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = { viewModel.showNoteEditor() },
-                                modifier = Modifier.weight(1f)
+                            // Action Buttons
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(
-                                    Icons.Default.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Ghi chú")
-                            }
+                                OutlinedButton(
+                                    onClick = { viewModel.showNoteEditor() },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Ghi chú")
+                                }
 
-                            OutlinedButton(
-                                onClick = { viewModel.showEmojiPicker() },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    Icons.Default.EmojiEmotions,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Cảm xúc")
+                                OutlinedButton(
+                                    onClick = { viewModel.showEmojiPicker() },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        Icons.Default.EmojiEmotions,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Cảm xúc")
+                                }
                             }
                         }
                     }
