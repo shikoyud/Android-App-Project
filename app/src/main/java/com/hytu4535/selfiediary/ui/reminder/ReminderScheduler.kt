@@ -1,8 +1,13 @@
 package com.hytu4535.selfiediary.ui.reminder
 
 import android.content.Context
+import android.util.Log
+import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.hytu4535.selfiediary.domain.usecase.HasSelfieTodayUseCase
 import com.hytu4535.selfiediary.notifications.NotificationHelper
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -11,7 +16,6 @@ import javax.inject.Singleton
 @Singleton
 class ReminderScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val notificationHelper: NotificationHelper
 ) {
 
     fun scheduleReminder(hour: Int, minute: Int) {
@@ -26,13 +30,14 @@ class ReminderScheduler @Inject constructor(
             .setConstraints(
                 Constraints.Builder()
                     .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+                    .setRequiresDeviceIdle(false)
                     .build()
             )
             .build()
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
             "selfie_daily_reminder",
-            ExistingPeriodicWorkPolicy.UPDATE,
+            ExistingPeriodicWorkPolicy.REPLACE,
             reminderRequest
         )
     }
@@ -54,16 +59,3 @@ class ReminderScheduler @Inject constructor(
         return calendar.timeInMillis
     }
 }
-
-class ReminderWorker(
-    context: Context,
-    params: WorkerParameters
-) : Worker(context, params) {
-
-    override fun doWork(): Result {
-        // TODO: Check if user has taken selfie today
-        // If not, send notification
-        return Result.success()
-    }
-}
-

@@ -1,24 +1,83 @@
-package com.hytu4535.selfiediary.ui.settings
+package com.hytu4535.selfiediary.ui.reminder
 
-import androidx.compose.foundation.layout.*
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import java.text.SimpleDateFormat
-import java.util.*
+import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderSettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: ReminderSettingsViewModel = hiltViewModel()
 ) {
-    var reminderEnabled by remember { mutableStateOf(true) }
-    var selectedHour by remember { mutableStateOf(8) }
-    var selectedMinute by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val settingsState by viewModel.reminderSettings.collectAsStateWithLifecycle()
+
+    var reminderEnabled by remember { mutableStateOf(settingsState.enabled) }
+    var selectedHour by remember { mutableStateOf(settingsState.hour) }
+    var selectedMinute by remember { mutableStateOf(settingsState.minute) }
+
+
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasNotificationPermission = granted
+    }
+
+    LaunchedEffect(Unit) {
+        if (!hasNotificationPermission) {
+            launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+
+    LaunchedEffect(settingsState) {
+        reminderEnabled = settingsState.enabled
+        selectedHour = settingsState.hour
+        selectedMinute = settingsState.minute
+    }
 
     Scaffold(
         topBar = {
@@ -57,7 +116,10 @@ fun ReminderSettingsScreen(
                 }
                 Switch(
                     checked = reminderEnabled,
-                    onCheckedChange = { reminderEnabled = it }
+                    onCheckedChange = { isEnabled ->
+                        reminderEnabled = isEnabled
+                        viewModel.toggleReminder(isEnabled, selectedHour, selectedMinute)
+                    }
                 )
             }
 
@@ -125,7 +187,7 @@ fun ReminderSettingsScreen(
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row {
                                     IconButton(onClick = {
-                                        selectedMinute = if (selectedMinute >= 15) selectedMinute - 15 else 45
+                                        selectedMinute = if (selectedMinute > 0) selectedMinute - 5 else 55
                                     }) {
                                         Text("-")
                                     }
@@ -135,7 +197,7 @@ fun ReminderSettingsScreen(
                                         modifier = Modifier.padding(horizontal = 8.dp)
                                     )
                                     IconButton(onClick = {
-                                        selectedMinute = if (selectedMinute < 45) selectedMinute + 15 else 0
+                                        selectedMinute = if (selectedMinute < 55) selectedMinute + 5 else 0
                                     }) {
                                         Text("+")
                                     }
@@ -149,9 +211,11 @@ fun ReminderSettingsScreen(
 
                 Button(
                     onClick = {
-                        // TODO: Save reminder settings
+                        viewModel.saveSettings(reminderEnabled, selectedHour, selectedMinute)
+                        onBack()
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = reminderEnabled
                 ) {
                     Text("Lưu cài đặt")
                 }

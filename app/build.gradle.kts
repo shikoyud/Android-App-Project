@@ -86,8 +86,8 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.0")
 
     // Hilt DI
-    implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-compiler:2.48")
+    implementation("com.google.dagger:hilt-android:2.50")
+    kapt("com.google.dagger:hilt-compiler:2.50")
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
     // Image Cropper for image cropping
@@ -98,7 +98,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
 
     // WorkManager for reminders
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
+    implementation("androidx.work:work-runtime-ktx:2.7.1")
+    implementation("androidx.hilt:hilt-work:1.0.0")
+    kapt ("androidx.hilt:hilt-compiler:1.0.0")
 
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")

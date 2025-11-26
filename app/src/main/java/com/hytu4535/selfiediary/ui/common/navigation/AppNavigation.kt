@@ -1,5 +1,6 @@
 package com.hytu4535.selfiediary.ui.common.navigation
 
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -7,6 +8,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.hytu4535.selfiediary.ui.capture.CaptureScreen
 import com.hytu4535.selfiediary.ui.detail.DetailScreen
 import com.hytu4535.selfiediary.ui.edit.EditScreen
@@ -15,8 +17,10 @@ import com.hytu4535.selfiediary.ui.gallery.GalleryScreen
 import com.hytu4535.selfiediary.ui.home.HomeScreen
 import com.hytu4535.selfiediary.ui.search.SearchScreen
 import com.hytu4535.selfiediary.ui.settings.SettingsScreen
-import com.hytu4535.selfiediary.ui.settings.ReminderSettingsScreen
+import com.hytu4535.selfiediary.ui.reminder.ReminderSettingsScreen
 import com.hytu4535.selfiediary.ui.statistics.StatisticsScreen
+
+const val BASE_URI = "app://com.hytu4535.selfiediary"
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
@@ -38,14 +42,36 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
 
-        composable(Screen.Capture.route) {
+        composable(
+            route = Screen.Capture.route,
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "$BASE_URI/${Screen.Capture.route}"
+                    action = Intent.ACTION_VIEW
+                }
+            )
+
+        ) {
             CaptureScreen(
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
                 onCaptureSuccess = { imagePath ->
                     navController.navigate(Screen.Edit.createRoute(imagePath))
                 }
             )
         }
+
+//        composable(Screen.Capture.route) {
+//            CaptureScreen(
+//                onBack = { navController.popBackStack() },
+//                onCaptureSuccess = { imagePath ->
+//                    navController.navigate(Screen.Edit.createRoute(imagePath))
+//                }
+//            )
+//        }
 
         composable(
             route = Screen.Edit.route,
