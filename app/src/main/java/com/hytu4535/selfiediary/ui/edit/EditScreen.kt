@@ -322,8 +322,8 @@ fun FilterSelector(
                 colors = AssistChipDefaults.assistChipColors(
                     containerColor = if (filter == currentFilter) MaterialTheme.colorScheme.primary else Color.LightGray,
                     labelColor = if (filter == currentFilter) Color.White else Color.Black
-                ),
-                border = AssistChipDefaults.assistChipBorder(borderColor = Color.Transparent)
+                )
+
             )
         }
     }

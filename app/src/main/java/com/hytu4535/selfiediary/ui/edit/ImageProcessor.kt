@@ -44,7 +44,8 @@ class ImageProcessor @Inject constructor(
     private fun createFilteredBitmap(originalBitmap: Bitmap, filterName: String): Bitmap {
         val width = originalBitmap.width
         val height = originalBitmap.height
-        val outputBitmap = createBitmap(width, height, originalBitmap.config)
+        val config = originalBitmap.config ?: Bitmap.Config.ARGB_8888
+        val outputBitmap = createBitmap(width, height, config)
         val canvas = Canvas(outputBitmap)
         val paint = Paint()
         val matrix = ColorMatrix()

@@ -16,7 +16,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onNavigateToReminderSettings: () -> Unit
+    onNavigateToReminderSettings: () -> Unit,
+    onNavigateToTimeLapse: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -50,7 +51,7 @@ fun SettingsScreen(
                 icon = Icons.Default.VideoLibrary,
                 title = "Tạo video Time-lapse",
                 subtitle = "Ghép các ảnh thành video",
-                onClick = { /* TODO */ }
+                onClick = onNavigateToTimeLapse
             )
 
             Divider()
@@ -134,4 +135,3 @@ private fun SettingsItem(
         )
     }
 }
-

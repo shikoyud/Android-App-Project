@@ -18,6 +18,7 @@ import com.hytu4535.selfiediary.ui.home.HomeScreen
 import com.hytu4535.selfiediary.ui.search.SearchScreen
 import com.hytu4535.selfiediary.ui.settings.SettingsScreen
 import com.hytu4535.selfiediary.ui.reminder.ReminderSettingsScreen
+import com.hytu4535.selfiediary.ui.timelapse.TimeLapseScreen
 import com.hytu4535.selfiediary.ui.statistics.StatisticsScreen
 
 const val BASE_URI = "app://com.hytu4535.selfiediary"
@@ -139,6 +140,10 @@ fun AppNavigation(navController: NavHostController) {
                 onBack = { navController.popBackStack() },
                 onNavigateToReminderSettings = {
                     navController.navigate(Screen.ReminderSettings.route)
+                },
+                // navigate to Time-lapse screen
+                onNavigateToTimeLapse = {
+                    navController.navigate(Screen.TimeLapse.route)
                 }
             )
         }
@@ -146,6 +151,10 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.ReminderSettings.route) {
             ReminderSettingsScreen(onBack = { navController.popBackStack() })
         }
+
+        // Time-lapse screen placeholder
+        composable(Screen.TimeLapse.route) {
+            TimeLapseScreen(onBack = { navController.popBackStack() })
+        }
     }
 }
-

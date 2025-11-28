@@ -19,6 +19,6 @@ sealed class Screen(val route: String) {
     object ImageDetail : Screen("image_detail/{imageId}") {
         fun createRoute(imageId: Long) = "image_detail/$imageId"
     }
+    object TimeLapse : Screen("timelapse")
     object ReminderSettings : Screen("reminder_settings")
 }
-
