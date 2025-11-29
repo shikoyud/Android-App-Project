@@ -6,6 +6,8 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 
     <application
         android:name="com.hytu4535.selfiediary.App"
@@ -37,6 +39,14 @@
                 <data android:scheme="app" android:host="com.hytu4535.selfiediary" />
             </intent-filter>
         </activity>
+
+        <receiver android:name="com.hytu4535.selfiediary.ui.reminder.AlarmReceiver" android:exported="false" />
+        <receiver android:name="com.hytu4535.selfiediary.ui.reminder.BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -45,4 +55,3 @@
     </application>
 
 </manifest>
-

@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 const val BASE_URI = "app://com.hytu4535.selfiediary"
-const val REMINDER_ROUTE = "reminder_settings"
+const val REMINDER_ROUTE = "capture"
 
 @Singleton
 class NotificationHelper @Inject constructor(
@@ -29,6 +29,7 @@ class NotificationHelper @Inject constructor(
     init {
         createNotificationChannel()
     }
+    // Deep link directly to the Capture screen so tapping the notification opens camera
     val deepLinkUri = Uri.parse("$BASE_URI/$REMINDER_ROUTE")
     val intent = Intent(
         Intent.ACTION_VIEW,

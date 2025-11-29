@@ -65,7 +65,19 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             }
         }
+
+        // Simple singleton accessor for non-DI consumers (e.g., workers)
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        fun getInstance(context: android.content.Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: androidx.room.Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "selfie_diary_db"
+                ).addMigrations(MIGRATION_1_2).build().also { INSTANCE = it }
+            }
+        }
     }
 }
-
-

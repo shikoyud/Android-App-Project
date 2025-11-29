@@ -51,4 +51,11 @@ class ReminderSettingsViewModel @Inject constructor(
             }
         }
     }
+
+    // For quick testing: enqueue an immediate one-time worker to show a notification.
+    fun testReminder() {
+        viewModelScope.launch {
+            reminderScheduler.scheduleImmediateTest()
+        }
+    }
 }
